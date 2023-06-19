@@ -45,7 +45,20 @@ ENV DBT_TOOLCHAIN_PATH=/dbt
 # Smoke run, which both checks that the toolchain is working and installs the
 # wheels for us so we don't need to ship those in the final image.
 ADD --keep-git-dir=true https://github.com/SynthstromAudible/DelugeFirmware.git#community /build
-RUN cd /build && ./dbt
+RUN <<EOF bash
+  set -ex
+  cd /build
+  # We only actually build on amd64 because running the compiler under
+  # emulation is extremely slow.
+  case "$TARGETARCH" in
+    amd64) ./dbt --e2_target=dbt-build-release-oled; ;;
+    arm64) ./dbt --help ;;
+    *)
+      echo "Unsupported TARGETARCH" $TARGETARCH
+      exit 1
+      ;;
+  esac
+EOF
 RUN rm -rf /dbt/toolchain/linux-$TARGETARCH/python/wheel/*
 
 #
@@ -61,21 +74,6 @@ RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /dbt /dbt
 RUN useradd -ms /bin/bash nonroot
 ENV DBT_TOOLCHAIN_PATH=/dbt
-RUN <<EOF bash
-  set -e
-  case "$TARGETARCH" in
-    amd64)
-      DBT_ARCH=x86_64
-      ;;
-    arm64)
-      DBT_ARCH=arm64
-      ;;
-    *)
-      echo "Unsupported TARGETARCH" $TARGETARCH
-      exit 1
-      ;;
-  esac
-EOF
 USER nonroot
 
 WORKDIR /src/
