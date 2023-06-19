@@ -39,8 +39,6 @@ jobs:
         with:
           context: .
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            DBT_VERSION=7
-            DBT_SHA256=ee26a2e2cc432c772bc2653baa6edd7c0b8bfa86c9f7041fa5395293dce74e5f
