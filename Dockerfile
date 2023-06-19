@@ -34,7 +34,7 @@ RUN <<EOF bash
       exit 1
       ;;
   esac
-  tar xvf \${DBT_TOOLCHAIN_TAR}
+  tar xf \${DBT_TOOLCHAIN_TAR} 2> >(grep -v "tar: Ignoring unknown extended header keyword")
   rm \${DBT_TOOLCHAIN_TAR}
   find /dbt/toolchain | grep -e '\/[.][^\/]*$' | parallel rm
   find ${DBT_TOOLCHAIN_PATH}/toolchain/linux-\$DBT_ARCH/python | \
