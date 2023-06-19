@@ -21,7 +21,7 @@ ENV DBT_TOOLCHAIN_PATH=/dbt
 
 # Smoke run, which both checks that the toolchain is working and installs the
 # wheels for us so we don't need to ship those in the final image.
-ADD --keep-git-dir=true https://github.com/SynthstromAudible/DelugeFirmware.git#litui/xmlbuild /build
+ADD --keep-git-dir=true https://github.com/SynthstromAudible/DelugeFirmware.git#community /build
 RUN cd /build && ./dbt
 RUN rm -rf /dbt/toolchain/linux-x86_64/python/wheel/*
 
