@@ -37,6 +37,9 @@ RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /dbt /dbt
 RUN useradd -ms /bin/bash nonroot
 ENV DBT_TOOLCHAIN_PATH=/dbt
+RUN find ${DBT_TOOLCHAIN_PATH}/toolchain/linux-x86_64/python \
+  -exec chown 1000:1000 {} \; \
+  -exec chmod a+rw {} \;
 USER nonroot
 
 WORKDIR /src/
