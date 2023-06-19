@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y git curl parallel
 RUN useradd -ms /bin/bash nonroot
 
 # Load the toolchain
-RUN <<EOF bash
+RUN <<LOAD_TOOLCHAIN bash
   set -ex
   mkdir -p /dbt/toolchain
   cd /dbt/toolchain
@@ -39,13 +39,13 @@ RUN <<EOF bash
   find /dbt/toolchain | grep -e '\/[.][^\/]*$' | parallel rm
   find ${DBT_TOOLCHAIN_PATH}/toolchain/linux-\$DBT_ARCH/python | \
     parallel bash -c "chown 1000:1000 {} && chmod a+rw {}"
-EOF
+LOAD_TOOLCHAIN
 ENV DBT_TOOLCHAIN_PATH=/dbt
 
 # Smoke run, which both checks that the toolchain is working and installs the
 # wheels for us so we don't need to ship those in the final image.
 ADD --keep-git-dir=true https://github.com/SynthstromAudible/DelugeFirmware.git#community /build
-RUN <<EOF bash
+RUN <<SMOKE_BUILD bash
   set -ex
   cd /build
   # We only actually build on amd64 because running the compiler under
@@ -58,7 +58,7 @@ RUN <<EOF bash
       exit 1
       ;;
   esac
-EOF
+SMOKE_BUILD
 RUN rm -rf /dbt/toolchain/linux-$TARGETARCH/python/wheel/*
 
 #
