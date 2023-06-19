@@ -21,11 +21,13 @@ RUN <<LOAD_TOOLCHAIN bash
   case "$TARGETARCH" in
     amd64)
       DBT_TOOLCHAIN_TAR=dbt-toolchain-${DBT_VERSION}-linux-x86_64.tar.gz
+      DBT_ARCH=x86_64
       curl -LO ${TOOLCHAIN_URL}/v${DBT_VERSION}/\${DBT_TOOLCHAIN_TAR}
       sha256sum \${DBT_TOOLCHAIN_TAR} | grep "$DBT_TOOLCHAIN_SHA_x86_64"
       ;;
     arm64)
       DBT_TOOLCHAIN_TAR=dbt-toolchain-${DBT_VERSION}-linux-arm64.tar.gz
+      DBT_ARCH=arm64
       curl -LO ${TOOLCHAIN_URL}/v${DBT_VERSION}/\${DBT_TOOLCHAIN_TAR}
       sha256sum \${DBT_TOOLCHAIN_TAR} | grep "$DBT_TOOLCHAIN_SHA_arm64"
       ;;
