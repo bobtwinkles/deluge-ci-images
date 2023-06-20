@@ -1,47 +1,66 @@
 # syntax=docker/dockerfile:1-labs
-# The build container
-FROM ubuntu:latest AS builder
-ARG TARGETARCH
+# Download and unpack the toolchain on the build host architecture
+FROM --platform=$BUILDPLATFORM ubuntu:latest as toolchain-unpacker
+ARG BUILDPLATFORM
 ARG DBT_VERSION=7
 ARG DBT_TOOLCHAIN_SHA_x86_64=ee26a2e2cc432c772bc2653baa6edd7c0b8bfa86c9f7041fa5395293dce74e5f
 ARG DBT_TOOLCHAIN_SHA_arm64=a2cf55fcdd6da31e8d961db7e8dabbc8d6dcdc5cacd2b09da4fc45bd4b06cd50
 ARG TOOLCHAIN_URL=https://github.com/litui/dbt-toolchain/releases/download
 
-# Install tools required by DBT
-RUN apt-get update && apt-get install -y git curl parallel
+# Install tools required to unpack the toolchain archive
+RUN apt-get update && apt-get install -y curl parallel
 
-# Configure user
-RUN useradd -ms /bin/bash nonroot
+# Local development: use locally downloaded toolchain files
+# COPY ./dbt-toolchain-7-linux-arm64.tar.gz /dbt/toolchain/
+# COPY ./dbt-toolchain-7-linux-x86_64.tar.gz /dbt/toolchain/
 
 # Load the toolchain
 RUN <<LOAD_TOOLCHAIN bash
   set -ex
   mkdir -p /dbt/toolchain
   cd /dbt/toolchain
-  case "$TARGETARCH" in
-    amd64)
-      DBT_TOOLCHAIN_TAR=dbt-toolchain-${DBT_VERSION}-linux-x86_64.tar.gz
-      DBT_ARCH=x86_64
+  targets="x86_64 arm64"
+  for target_arch in \$targets; do
+    DBT_TOOLCHAIN_TAR=dbt-toolchain-${DBT_VERSION}-linux-\${target_arch}.tar.gz
+
+    # For local development (see COPY commands above) don't redownload
+    # toolchains if they're already present
+    if [ ! -e "\${DBT_TOOLCHAIN_TAR}" ]; then
       curl -LO ${TOOLCHAIN_URL}/v${DBT_VERSION}/\${DBT_TOOLCHAIN_TAR}
-      sha256sum \${DBT_TOOLCHAIN_TAR} | grep "$DBT_TOOLCHAIN_SHA_x86_64"
-      ;;
-    arm64)
-      DBT_TOOLCHAIN_TAR=dbt-toolchain-${DBT_VERSION}-linux-arm64.tar.gz
-      DBT_ARCH=arm64
-      curl -LO ${TOOLCHAIN_URL}/v${DBT_VERSION}/\${DBT_TOOLCHAIN_TAR}
-      sha256sum \${DBT_TOOLCHAIN_TAR} | grep "$DBT_TOOLCHAIN_SHA_arm64"
-      ;;
-    *)
-      echo "Unsupported TARGETARCH" $TARGETARCH
-      exit 1
-      ;;
-  esac
-  tar xf \${DBT_TOOLCHAIN_TAR} 2> >(grep -v "tar: Ignoring unknown extended header keyword")
-  rm \${DBT_TOOLCHAIN_TAR}
-  find /dbt/toolchain | grep -e '\/[.][^\/]*$' | parallel rm
-  find ${DBT_TOOLCHAIN_PATH}/toolchain/linux-\$DBT_ARCH/python | \
-    parallel bash -c "chown 1000:1000 {} && chmod a+rw {}"
+      sha256sum \${DBT_TOOLCHAIN_TAR} | grep "$DBT_TOOLCHAIN_SHA_\$target_arch"
+    fi
+
+    # Untar the toolchain and delete the tar file to reduce layer size
+    tar xvf \${DBT_TOOLCHAIN_TAR} 2> >(grep -v "tar: Ignoring unknown extended header keyword")
+    rm \${DBT_TOOLCHAIN_TAR}
+    # Delete OSX files that shouldn't be there and cause problems for Python
+    find /dbt/toolchain/linux-\$target_arch/ -type f -name '.*' -delete
+    # Make Python R+W by the build user
+    find /dbt/toolchain/linux-\$target_arch/python | \
+      parallel chown 1000:1000 {} \; chmod a+rw {}
+  done
+  # kinda stupid hack: move linux-x86_64 to linux-amd64 so we can do a COPY
+  # --from below using the Docker TARGETARCH. We then move it back to the right position
+  mv /dbt/toolchain/linux-x86_64/ /dbt/toolchain/linux-amd64
+  ls /dbt/toolchain
 LOAD_TOOLCHAIN
+
+# Configure user
+RUN useradd -ms /bin/bash nonroot
+
+# The build container
+FROM ubuntu:latest AS builder
+ARG TARGETARCH
+
+# Install tools required by DBT
+RUN apt-get update && apt-get install -y git
+
+# Configure user
+RUN useradd -ms /bin/bash nonroot
+
+# Copy DBT from the unpack container
+COPY --from=toolchain-unpacker /dbt/toolchain/linux-$TARGETARCH/ /dbt/toolchain/linux-$TARGETARCH/
+RUN if [ "$TARGETARCH" = "amd64" ]; then mv /dbt/toolchain/linux-amd64 /dbt/toolchain/linux-x86_64; fi
 ENV DBT_TOOLCHAIN_PATH=/dbt
 
 # Smoke run, which both checks that the toolchain is working and installs the
