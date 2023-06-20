@@ -31,7 +31,7 @@ RUN <<LOAD_TOOLCHAIN bash
     fi
 
     # Untar the toolchain and delete the tar file to reduce layer size
-    tar xvf \${DBT_TOOLCHAIN_TAR} 2> >(grep -v "tar: Ignoring unknown extended header keyword")
+    tar xf \${DBT_TOOLCHAIN_TAR} 2> >(grep -v "tar: Ignoring unknown extended header keyword")
     rm \${DBT_TOOLCHAIN_TAR}
     # Delete OSX files that shouldn't be there and cause problems for Python
     find /dbt/toolchain/linux-\$target_arch/ -type f -name '.*' -delete
@@ -85,7 +85,7 @@ RUN rm -rf /dbt/toolchain/linux-$TARGETARCH/python/wheel/*
 #
 # Build the final image, based on distroless
 #
-FROM ubuntu:latest
+FROM ubuntu:latest as final
 ARG TARGETARCH
 
 # Make sure we have git, as it's needed at runtime
