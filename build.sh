@@ -2,8 +2,10 @@
 
 set -euo pipefail
 
-DBT_TOOLCHAIN_VERSION=7
-DBT_TOOLCHAIN_HASH=ee26a2e2cc432c772bc2653baa6edd7c0b8bfa86c9f7041fa5395293dce74e5f
+# Below hash is for linux-x86_64 release of dbt-toolchain
+DBT_TOOLCHAIN_VERSION=8
+DBT_TOOLCHAIN_HASH=a873607a018adb463b8136b4e6c54b4a97eb9fd1cd6656b8077f0ac54a00e1b0
+
 
 DOCKER_BUILDKIT=1 \
   docker build \
