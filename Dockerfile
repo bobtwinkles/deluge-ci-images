@@ -2,9 +2,9 @@
 # Download and unpack the toolchain on the build host architecture
 FROM --platform=$BUILDPLATFORM ubuntu:latest as toolchain-unpacker
 ARG BUILDPLATFORM
-ARG DBT_VERSION=7
-ARG DBT_TOOLCHAIN_SHA_x86_64=ee26a2e2cc432c772bc2653baa6edd7c0b8bfa86c9f7041fa5395293dce74e5f
-ARG DBT_TOOLCHAIN_SHA_arm64=a2cf55fcdd6da31e8d961db7e8dabbc8d6dcdc5cacd2b09da4fc45bd4b06cd50
+ARG DBT_VERSION=8
+ARG DBT_TOOLCHAIN_SHA_x86_64=a873607a018adb463b8136b4e6c54b4a97eb9fd1cd6656b8077f0ac54a00e1b0
+ARG DBT_TOOLCHAIN_SHA_arm64=d3e8f70f052247885a1dbcd0cb0eee2a27310ce6043609053080c4c215ce3624
 ARG TOOLCHAIN_URL=https://github.com/litui/dbt-toolchain/releases/download
 
 # Install tools required to unpack the toolchain archive
