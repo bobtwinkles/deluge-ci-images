@@ -8,7 +8,9 @@ toolchain]. To use them locally, this snippet should work (run within the
 ```shell
 docker run --rm \
     --user=$(id --user):$(id --group) \
-    -v $(pwd):/src \
+    -v $(pwd):$(pwd) \
+    --workdir $(pwd) \
+    --entrypoint $(pwd)/dbt \
     ghcr.io/bobtwinkles/deluge-ci-images:main \
     --e2_target=dbt-build-release-oled
 ```
